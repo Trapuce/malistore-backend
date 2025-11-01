@@ -119,11 +119,11 @@ nano .env
 ### Étape 5 : Vérifier Traefik
 
 ```bash
-# Vérifier que le réseau traefik-network existe
-docker network ls | grep traefik
+# Vérifier que le réseau web existe
+docker network ls | grep web
 
 # Si absent, créer le réseau
-docker network create traefik-network
+docker network create web
 
 # Vérifier que Traefik tourne
 docker ps | grep traefik

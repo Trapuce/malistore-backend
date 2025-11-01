@@ -64,12 +64,12 @@ openssl rand -base64 64
 
 Sur votre VPS :
 ```bash
-docker network ls | grep traefik
+docker network ls | grep web
 ```
 
 Si le réseau n'existe pas, créez-le :
 ```bash
-docker network create traefik-network
+docker network create web
 ```
 
 ### 2.2 Vérifier votre configuration Traefik

@@ -3,7 +3,7 @@
 ## 📋 Prérequis VPS
 - Docker et Docker Compose installés
 - Traefik en cours d'exécution
-- Réseau Docker `traefik-network` créé
+- Réseau Docker `web` créé
 - Domaine `backend-storemali.trapuce.tech` pointant vers le VPS
 
 ## ⚡ Déploiement en 5 Minutes

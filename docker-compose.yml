@@ -72,17 +72,17 @@ services:
       - uploads:/app/uploads
     networks:
       - malistore-network
-      - traefik-network
+      - web
     labels:
       # Traefik Configuration
       - "traefik.enable=true"
-      - "traefik.docker.network=traefik-network"
+      - "traefik.docker.network=web"
       
       # HTTP Router
       - "traefik.http.routers.malistore-backend.rule=Host(`backend-storemali.trapuce.tech`)"
       - "traefik.http.routers.malistore-backend.entrypoints=websecure"
       - "traefik.http.routers.malistore-backend.tls=true"
-      - "traefik.http.routers.malistore-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.malistore-backend.tls.certresolver=myresolver"
       
       # Service
       - "traefik.http.services.malistore-backend.loadbalancer.server.port=8080"
@@ -103,7 +103,7 @@ services:
 networks:
   malistore-network:
     driver: bridge
-  traefik-network:
+  web:
     external: true
 
 volumes:

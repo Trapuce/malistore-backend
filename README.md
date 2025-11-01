@@ -79,6 +79,7 @@ API Backend REST pour une plateforme e-commerce complète construite avec Spring
 - Java 17+
 - Docker & Docker Compose
 - Maven 3.9+
+- Traefik (pour la production)
 
 ### 1. Cloner le projet
 
