@@ -48,8 +48,12 @@ public class PaymentService {
 
     @PostConstruct
     public void init() {
-        Stripe.apiKey = stripeSecretKey;
-        log.info("Stripe initialized with secret key: {}...", stripeSecretKey.substring(0, 7));
+        if (stripeSecretKey != null && !stripeSecretKey.isEmpty() && stripeSecretKey.length() > 7) {
+            Stripe.apiKey = stripeSecretKey;
+            log.info("Stripe initialized with secret key: {}...", stripeSecretKey.substring(0, 7));
+        } else {
+            log.warn("Stripe secret key not configured. Payment features will be disabled.");
+        }
     }
 
     /**

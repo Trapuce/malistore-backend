@@ -1,0 +1,153 @@
+# ================================================================
+# COMMANDES À EXÉCUTER SUR VOTRE VPS
+# Copiez-collez ces commandes une par une
+# ================================================================
+
+# 1. Se connecter au VPS et aller dans le dossier
+cd /infra-traefik/apps/malistore-backend
+
+# 2. Créer le fichier .env avec nano
+nano .env
+
+# ================================================================
+# COPIER LE CONTENU CI-DESSOUS DANS LE FICHIER .env
+# (Dans nano: Ctrl+X pour sauvegarder, puis Y, puis Enter)
+# ================================================================
+
+POSTGRES_DB=malistore_db
+POSTGRES_USER=malistore_user
+POSTGRES_PASSWORD=MaliStore2025SecurePassword!
+
+# IMPORTANT: Générer un JWT_SECRET unique avec cette commande:
+# openssl rand -base64 64
+JWT_SECRET=VotreCleSuperSecreteGenereeAvecOpenSSL64CaracteresMinimum
+JWT_EXPIRATION=86400000
+JWT_REFRESH_EXPIRATION=604800000
+
+APP_BASE_URL=https://backend-storemali.trapuce.tech
+APP_FRONTEND_URL=https://storemali.trapuce.tech
+
+# Stripe (laisser vide si pas utilisé)
+STRIPE_PUBLIC_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_SUCCESS_URL=https://storemali.trapuce.tech/payment/success
+STRIPE_CANCEL_URL=https://storemali.trapuce.tech/payment/cancel
+
+# Email (laisser vide si pas utilisé)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=
+MAIL_PASSWORD=
+
+STOCK_ALERT_THRESHOLD=5
+STOCK_ALERT_EMAIL=trapucework33@gmail.com
+
+JAVA_OPTS=-Xms256m -Xmx512m
+
+# ================================================================
+# FIN DU FICHIER .env
+# ================================================================
+
+# 3. GÉNÉRER UN JWT_SECRET SÉCURISÉ
+openssl rand -base64 64
+
+# Copiez le résultat et modifiez la ligne JWT_SECRET dans le fichier .env
+
+# 4. Modifier le fichier .env avec le JWT_SECRET généré
+nano .env
+# Remplacez la valeur de JWT_SECRET par celle générée
+# Sauvegardez: Ctrl+X, Y, Enter
+
+# 5. Tirer la dernière version du code depuis GitHub
+git pull origin main
+
+# 6. Arrêter les conteneurs actuels
+docker-compose down
+
+# 7. Reconstruire l'image avec le code corrigé
+docker-compose build --no-cache
+
+# 8. Démarrer les services
+docker-compose up -d
+
+# 9. Voir les logs en temps réel
+docker-compose logs -f backend
+
+# Attendez de voir: "Started MalistoreBackendApplication"
+# Appuyez sur Ctrl+C pour quitter les logs
+
+# 10. Vérifier que tout fonctionne
+docker-compose ps
+
+# Les deux conteneurs doivent être "Up" et "healthy"
+
+# ================================================================
+# TESTS
+# ================================================================
+
+# 11. Tester l'API (attendre 1 minute après le démarrage)
+curl https://backend-storemali.trapuce.tech/actuator/health
+
+# Résultat attendu: {"status":"UP"}
+
+# 12. Tester les catégories
+curl https://backend-storemali.trapuce.tech/api/categories
+
+# Résultat attendu: JSON avec les 5 catégories
+
+# 13. Tester l'inscription
+curl -X POST https://backend-storemali.trapuce.tech/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test User",
+    "email": "test@trapuce.tech",
+    "password": "Test1234!"
+  }'
+
+# ================================================================
+# SI PROBLÈME SSL
+# ================================================================
+
+# Vérifier les logs Traefik
+docker logs traefik | grep backend-storemali
+
+# Redémarrer Traefik
+docker restart traefik
+
+# Attendre 2 minutes et retester
+sleep 120
+curl https://backend-storemali.trapuce.tech/actuator/health
+
+# ================================================================
+# COMMANDES UTILES
+# ================================================================
+
+# Voir les logs
+docker-compose logs -f backend
+
+# Redémarrer seulement le backend
+docker-compose restart backend
+
+# Arrêter tout
+docker-compose down
+
+# Voir l'utilisation des ressources
+docker stats
+
+# Backup de la base de données
+docker exec malistore-postgres pg_dump -U malistore_user malistore_db > backup_$(date +%Y%m%d).sql
+
+# ================================================================
+# IMPORTANT
+# ================================================================
+
+# 1. Le JWT_SECRET DOIT être unique et sécurisé
+# 2. Le POSTGRES_PASSWORD DOIT être fort
+# 3. Ne PAS commiter le fichier .env sur Git
+# 4. Attendre 2-3 minutes pour la génération du certificat SSL
+
+# ================================================================
+# FIN
+# ================================================================
+
