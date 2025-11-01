@@ -1,0 +1,125 @@
+spring:
+  application:
+    name: malistore-backend
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/malistore_db}
+    username: ${SPRING_DATASOURCE_USERNAME:malistore_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:malistore_password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
+
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# Email Configuration (optionnel)
+mail:
+  host: ${MAIL_HOST:smtp.gmail.com}
+  port: ${MAIL_PORT:587}
+  username: ${MAIL_USERNAME:}
+  password: ${MAIL_PASSWORD:}
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+        ssl:
+          trust: smtp.gmail.com
+
+# Application Configuration
+app:
+  frontend-url: ${APP_FRONTEND_URL:https://storemali.trapuce.tech}
+  reset-password-url: ${APP_FRONTEND_URL:https://storemali.trapuce.tech}/reset-password
+  base-url: ${APP_BASE_URL:https://backend-storemali.trapuce.tech}
+  upload:
+    dir: ${UPLOAD_DIR:/app/uploads/images}
+    max-file-size: ${MAX_FILE_SIZE:10MB}
+    max-request-size: ${MAX_REQUEST_SIZE:50MB}
+  stock:
+    alert-threshold: ${STOCK_ALERT_THRESHOLD:5}
+    alert-email: ${STOCK_ALERT_EMAIL:admin@malistore.com}
+
+# Stripe Configuration
+stripe:
+  public-key: ${STRIPE_PUBLIC_KEY:}
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  success-url: ${STRIPE_SUCCESS_URL:https://storemali.trapuce.tech/payment/success}
+  cancel-url: ${STRIPE_CANCEL_URL:https://storemali.trapuce.tech/payment/cancel}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.malistore_backend: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+  file:
+    name: /app/logs/malistore.log
+    max-size: 10MB
+    max-history: 30
+
+# Management/Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# Server Configuration
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    accept-count: 100
+    max-connections: 10000
+

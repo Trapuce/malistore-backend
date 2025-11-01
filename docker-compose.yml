@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: malistore-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-malistore_db}
+      POSTGRES_USER: ${POSTGRES_USER:-malistore_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-malistore_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - malistore-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-malistore_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot Application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: malistore-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-malistore_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-malistore_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-malistore_password}
+      
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+      
+      # Application
+      APP_BASE_URL: ${APP_BASE_URL:-https://backend-storemali.trapuce.tech}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-https://storemali.trapuce.tech}
+      
+      # Stripe (optionnel)
+      STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-https://storemali.trapuce.tech/payment/success}
+      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL:-https://storemali.trapuce.tech/payment/cancel}
+      
+      # Email (optionnel)
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      
+      # Stock Alert
+      STOCK_ALERT_THRESHOLD: ${STOCK_ALERT_THRESHOLD:-5}
+      STOCK_ALERT_EMAIL: ${STOCK_ALERT_EMAIL:-admin@malistore.com}
+      
+      # Upload
+      UPLOAD_DIR: /app/uploads/images
+      
+      # Java Options
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
+      
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - malistore-network
+      - traefik-network
+    labels:
+      # Traefik Configuration
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-network"
+      
+      # HTTP Router
+      - "traefik.http.routers.malistore-backend.rule=Host(`backend-storemali.trapuce.tech`)"
+      - "traefik.http.routers.malistore-backend.entrypoints=websecure"
+      - "traefik.http.routers.malistore-backend.tls=true"
+      - "traefik.http.routers.malistore-backend.tls.certresolver=letsencrypt"
+      
+      # Service
+      - "traefik.http.services.malistore-backend.loadbalancer.server.port=8080"
+      
+      # Middlewares (optionnel - décommenter si nécessaire)
+      # - "traefik.http.routers.malistore-backend.middlewares=malistore-backend-headers"
+      # - "traefik.http.middlewares.malistore-backend-headers.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
+      # - "traefik.http.middlewares.malistore-backend-headers.headers.accesscontrolalloworigin=*"
+      # - "traefik.http.middlewares.malistore-backend-headers.headers.accesscontrolmaxage=100"
+      # - "traefik.http.middlewares.malistore-backend-headers.headers.addvaryheader=true"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  malistore-network:
+    driver: bridge
+  traefik-network:
+    external: true
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads:
+    driver: local
+
